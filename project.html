@@ -1,0 +1,238 @@
+<html lang="en">
+	<head>
+		<title>three.js webgl - geometry - cube</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			body {
+				margin: 0px;
+				background-color: #000000;
+				overflow: hidden;
+			}
+		</style>
+	</head>
+	<body>
+
+		<script src="build/three.js"></script>
+		<script src="js\controls\OrbitControls.js"></script>
+
+		<script>
+
+			var scene, camera, renderer, box, material, plane, sphere;
+			var pipesNo = 6;
+            var pipesUp = new Array(pipesNo);
+			var Ypipes = new Array(pipesNo);
+            var pipesDown = new Array(pipesNo);
+            var pipesX = 100;
+            var gapX = 800;
+            var gapY = 500;
+            var screenH = 1000;
+            var p1StartH = 800;
+            var p2StartH = 0;
+            var mod = screenH - gapY;
+			var myScore = 0;
+			var text2 = document.createElement('div');
+            var Ylength= new Array(pipesNo);
+			init();
+			animate();
+
+            function generate(){
+                var x = 200;
+                var y;
+                for(var i = 0; i < pipesNo; i++){
+                    y = (Math.random() * screenH )%mod;
+					//Ypipes[i] = y;
+					var textureUp = new THREE.TextureLoader().load('pipeUp.png');
+					var textureDown = new THREE.TextureLoader().load('pipeDown.png');
+                    //console.log(y);
+					/*var geo = new THREE.CylinderGeometry( 100, 100, 700, 100 );
+					var mat = new THREE.MeshBasicMaterial({map:textureDown});
+					var h = new THREE.Mesh(geo, mat);
+					scene.add(h);*/
+                    var geometry = new THREE.CylinderGeometry( 100, 100, y, 100 );
+				    var material =new THREE.MeshBasicMaterial({map:textureUp});
+				    pipesUp[i] = new THREE.Mesh(geometry, material);
+				    pipesUp[i].position.set(x+pipesX,p1StartH - (y/2),200);
+				    scene.add(pipesUp[i]);
+					/////////////////////
+					Ypipes[i] = (pipesUp[i].position.y) - (y/2);
+					Ylength[i]= (pipesUp[i].position.y);
+					/////////////////////
+					var geometry2 = new THREE.CylinderGeometry( 100, 100, screenH-y-gapY, 100 );
+				    var material2 = new THREE.MeshBasicMaterial({map:textureDown});
+				    pipesDown[i] = new THREE.Mesh(geometry2, material2);
+				    pipesDown[i].position.set(x+pipesX,p2StartH + ((screenH-y-gapY)/2),200);
+				    scene.add(pipesDown[i]);
+
+                    x += pipesX + gapX;
+                }
+            }
+
+			function regenerate(){
+				if(pipesUp[0].position.x - 50 == -2000){
+					scene.remove(pipesUp[0]);
+					scene.remove(pipesDown[0]);
+					for(var i = 0 ; i < pipesNo-1 ; i++){
+						pipesUp[i] = pipesUp[i + 1];
+						pipesDown[i] = pipesDown[i + 1];
+						Ypipes[i] = Ypipes[i+1];
+					}
+					y = (Math.random() * screenH )%mod;
+					var textureUp = new THREE.TextureLoader().load('pipeUp.png');
+					var textureDown = new THREE.TextureLoader().load('pipeDown.png');
+                    var geometry = new THREE.CylinderGeometry( 100, 100, y, 100 );
+				    var material =new THREE.MeshBasicMaterial({map:textureUp});
+				    pipesUp[pipesNo-1] = new THREE.Mesh(geometry, material);
+				    pipesUp[pipesNo-1].position.set(3300+pipesX,p1StartH - (y/2),200);
+				    scene.add(pipesUp[pipesNo-1]);
+					/////////////////////
+					Ypipes[pipesNo-1] = (pipesUp[pipesNo-1].position.y) - (y/2);
+					/////////////////////
+					var geometry2 = new THREE.CylinderGeometry( 100, 100, screenH-y-gapY, 100 );
+				    var material2 = new THREE.MeshBasicMaterial({map:textureDown});
+				    pipesDown[pipesNo-1] = new THREE.Mesh(geometry2, material2);
+				    pipesDown[pipesNo-1].position.set(3300+pipesX,p2StartH + ((screenH-y-gapY)/2),200);
+				    scene.add(pipesDown[pipesNo-1]);
+				}
+			}
+
+            function movePipes(){
+				var sphereX = (sphere.position.x) - (80/2);
+                for(var i = 0; i < pipesNo; i++){
+                    pipesUp[i].position.x-= 5;
+                    pipesDown[i].position.x-= 5;
+
+					//Check for incrementing the score
+					if(sphereX == pipesUp[i].position.x){
+						myScore++;
+						text2.innerHTML = "Score: " + myScore;
+						document.body.appendChild(text2);
+					}
+					
+                }
+				
+            }
+
+			
+			function moveBall(event){
+				var keyCode = event.which;
+   	 			if (keyCode == 38) {//up
+        			sphere.position.y += 60;
+				}
+			}
+
+			function checkCollision(){
+				var upX , upY1 , upY2;
+				var sphereX , sphereY;
+				for(var i = 0 ; i < pipesNo ; i++){
+					//console.log(pipesX/2);
+					upX = (pipesUp[i].position.x) - (pipesX+20); // x bta3 el pipe el foo2 
+					sphereX = (sphere.position.x) + 40; // booz el 3asfora
+					sphereY = (sphere.position.y); // ras el 3asfora 
+
+					upY1 = (pipesUp[i].position.y) + (Ypipes[i]); 
+					upY2 = upY1 + gapY;
+
+					if(upX == sphereX && (sphereY+40) > Ypipes[i])
+					{
+						console.log("Collision top left");
+						return true;
+					}
+					if(upX == sphereX && (sphereY-40) < Ypipes[i] - gapY)
+					{
+						console.log("Collision bottom left");
+						console.log(sphereY-80);
+						console.log (Ypipes[i] -gapY);
+						return true;
+					}
+					if((sphereX > upX || sphereX < upX+100) && (sphereY+40) > Ypipes[i])
+					{
+						console.log("Collision bottom top");
+						return true;
+					}
+					/*else if(sphereX > upX && sphereX < upX+100 && (sphereY-200) < Ypipes[i] - gapY)
+					{
+						console.log("Collision top bottom");
+					}*/
+				    if(sphereY - 40 < 0)
+					{
+						console.log("Collision ground");
+						return true;
+					}
+				
+				}
+				return false;
+			}
+
+			function init() {
+
+				camera = new THREE.PerspectiveCamera(70 ,window.innerWidth/window.innerHeight, 1 , 10000);
+				camera.position.z = 1700;
+				camera.position.y = 600;
+				camera.position.x = 0;
+				scene = new THREE.Scene();
+				scene.background= new THREE.TextureLoader().load('bg.png');
+				var textureGrass = new THREE.TextureLoader().load('grass.jpg');
+
+ 			
+
+                generate();
+				//new THREE.OrbitControls(camera);
+
+				var planeg = new THREE.BoxBufferGeometry(6000 , 0 , 1600);
+				planeMaterial = new THREE.MeshPhongMaterial({color:0xFF5733});
+				plane = new THREE.Mesh(planeg, planeMaterial);
+				plane.position.set(0, 0, 0);
+				plane.rotation.y=THREE.Math.degToRad( 180 );
+				scene.add(plane);
+
+
+				
+				text2.style.position = 'absolute';
+				text2.style.width = 100;
+				text2.style.height = 100;
+				text2.style.backgroundColor = "transparent";
+				text2.innerHTML = "Score: " + myScore;
+				text2.style.top = 200 + 'px';
+				text2.style.left = 200 + 'px';
+				document.body.appendChild(text2);
+
+	          
+				var textureBird = new THREE.TextureLoader().load('Flappy_Bird.png');
+			    var sphereg = new THREE.SphereGeometry(80 , 80 , 80);
+				sphereMaterial = new THREE.MeshPhongMaterial({map:textureBird});
+				sphere = new THREE.Mesh(sphereg, sphereMaterial);
+				sphere.position.set(-500, 300, 200);
+				scene.add(sphere);
+
+				
+
+				var ambient = new THREE.AmbientLight(0xFFFF , 1);
+				scene.add(ambient);
+
+				renderer = new THREE.WebGLRenderer();
+				renderer.setPixelRatio(window.devicePixelRatio);
+				renderer.setSize(window.innerWidth,window.innerHeight);
+				document.body.appendChild(renderer.domElement);
+
+
+			}
+
+
+			function animate() {
+				var id = requestAnimationFrame(animate);
+				renderer.render(scene,camera);
+				sphere.position.y -= 3;
+				movePipes();
+				document.addEventListener("keydown", moveBall);
+				if(checkCollision())
+				{
+					cancelAnimationFrame(id);
+				}
+				regenerate();
+			}
+
+		</script>
+
+	</body>
+</html>
